@@ -1,7 +1,7 @@
 import time
 import logging
 import threading
-from typing import Callable
+from typing import Callable, Union, Optional
 from pprint import pformat
 from functools import lru_cache
 
@@ -75,7 +75,7 @@ class Bot(object):
         """
         user = self.get_user(event.user)
         channel = self.get_channel(event.channel)
-        self.logger.info(f"{user.name} -> {channel.name}: {event.text}")
+        self.logger.info(f"{user.name if user is not None else 'GarfieldBot'} -> {channel.name}: {event.text}")
 
     def register_handler(self, type: str, handler: Callable[[SlackEvent], None]) -> None:
         """
@@ -90,7 +90,7 @@ class Bot(object):
             self._handlers[type].append(handler)
 
     @lru_cache()
-    def get_user(self, id: str) -> User:
+    def get_user(self, id: str) -> Optional[User]:
         """
         Turns a Slack user ID into a user object.
         Last 128 users retrieved are cached, meaning updated user details may not be visible immediately.
@@ -103,10 +103,13 @@ class Bot(object):
             user=id
         )
 
-        return User(user_data["user"])
+        try:
+            return User(user_data["user"])
+        except KeyError:
+            None
 
     @lru_cache()
-    def get_channel(self, id: str) -> Channel:
+    def get_channel(self, id: str) -> Optional[Channel]:
         """
         Turns a Slack user ID into a channel object.
         Last 128 channels retrieved are cached, meaning updated channel details may not be visible immediately.
@@ -119,7 +122,26 @@ class Bot(object):
             channel=id
         )
 
-        return Channel(channel_data["channel"])
+        try:
+            return Channel(channel_data["channel"])
+        except KeyError:
+            return None
+
+    def send_message(self, channel: Union[Channel, str], text: str) -> None:
+        """
+        Sends a message to a given Slack channel.
+
+        :param channel: Either the ID of the channel to send to, or a channel object.
+        :param text: The text to send.
+        """
+        if isinstance(channel, Channel):
+            channel = channel.id
+
+        self.client.api_call(
+            "chat.postMessage",
+            channel=channel,
+            text=text
+        )
 
     def start(self) -> None:
         """
