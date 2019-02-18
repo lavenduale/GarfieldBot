@@ -1,12 +1,14 @@
 import time
 import logging
+import threading
+from typing import Callable
 from pprint import pformat
 
 from slackclient import SlackClient
 from jigsaw import PluginLoader
 
 from .Plugin import GarfieldPlugin
-from .Events import EVENTS
+from .DataClasses import EVENTS, SlackEvent, HelloEvent
 
 
 class Bot(object):
@@ -35,6 +37,8 @@ class Bot(object):
         self.loader.load_plugins(self)
         self.loader.enable_all_plugins()
 
+        self.register_handler("hello", self._handle_hello)
+
     def _parse_event(self, data: dict):
         """
         Parses an incoming event, dispatching it to all listening plugins.
@@ -49,7 +53,30 @@ class Bot(object):
         if data["type"] in self._handlers:
             event_instance = event_class(data)
             for handler in self._handlers[data["type"]]:
-                handler(event_instance)
+                threading.Thread(
+                    target=handler,
+                    args=(event_instance, )
+                ).start()
+
+    def _handle_hello(self, event: HelloEvent) -> None:
+        """
+        Handles an incoming hello event, logging that the bot has successfully connected.
+
+        :param event: The event instance.
+        """
+        self.logger.info("GarfieldBot successfully connected to Slack.")
+
+    def register_handler(self, type: str, handler: Callable[[SlackEvent], None]) -> None:
+        """
+        Registers a handler for a certain event.
+
+        :param type: The type of event to handle.
+        :param handler: The function to be used to handle the event.
+        """
+        if type not in self._handlers:
+            self._handlers[type] = [handler]
+        else:
+            self._handlers[type].append(handler)
 
     def start(self) -> None:
         """

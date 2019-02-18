@@ -1,17 +1,24 @@
-class SlackEvent(object):
+
+class SlackDataClass(object):
     """
-    Represents an incoming event from Slack.
+    Represents a generic data class referring to a Slack object.
     """
-    type = "unknown"
 
     def __init__(self, data: dict):
         """
-        Initializes an incoming event.
+        Initializes the data class.
 
-        :param data: The incoming event data.
+        :param data: The dictionary of data returned by Slack.
         """
         self.unprocessed_data = data
         self.__dict__.update(data)
+
+
+class SlackEvent(SlackDataClass):
+    """
+    Represents an incoming event from Slack.
+    """
+    type: str = "unknown"
 
 
 class HelloEvent(SlackEvent):
