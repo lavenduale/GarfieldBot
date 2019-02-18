@@ -26,6 +26,8 @@ class Bot(object):
         self.logger.debug("Creating Slack client...")
         self.client = SlackClient(token)
 
+        self._handlers = {}
+
         # Discover and load all plugins from the plugins directory
         self.logger.debug("Loading plugins...")
         self.loader = PluginLoader(plugin_class=GarfieldPlugin)
@@ -41,6 +43,13 @@ class Bot(object):
         """
         if data["type"] not in EVENTS:
             self.logger.warning(f"Unknown event type '{data['type']}'.\nData:\n{pformat(data)}")
+            event_class = EVENTS["unknown"]
+        else:
+            event_class = EVENTS[data["type"]]
+        if data["type"] in self._handlers:
+            event_instance = event_class(data)
+            for handler in self._handlers[data["type"]]:
+                handler(event_instance)
 
     def start(self) -> None:
         """
