@@ -3,12 +3,14 @@ import logging
 import threading
 from typing import Callable
 from pprint import pformat
+from functools import lru_cache
 
 from slackclient import SlackClient
 from jigsaw import PluginLoader
 
 from .Plugin import GarfieldPlugin
-from .DataClasses import EVENTS, SlackEvent, HelloEvent
+from .DataClasses import EVENTS, SlackEvent, HelloEvent, User, MessageEvent,\
+    Channel
 
 
 class Bot(object):
@@ -38,6 +40,7 @@ class Bot(object):
         self.loader.enable_all_plugins()
 
         self.register_handler("hello", self._handle_hello)
+        self.register_handler("message", self._handle_message)
 
     def _parse_event(self, data: dict):
         """
@@ -66,6 +69,14 @@ class Bot(object):
         """
         self.logger.info("GarfieldBot successfully connected to Slack.")
 
+    def _handle_message(self, event: MessageEvent) -> None:
+        """
+        Handles incoming chat messages, logging them to console and dispatching commands.
+        """
+        user = self.get_user(event.user)
+        channel = self.get_channel(event.channel)
+        self.logger.info(f"{user.name} -> {channel.name}: {event.text}")
+
     def register_handler(self, type: str, handler: Callable[[SlackEvent], None]) -> None:
         """
         Registers a handler for a certain event.
@@ -77,6 +88,38 @@ class Bot(object):
             self._handlers[type] = [handler]
         else:
             self._handlers[type].append(handler)
+
+    @lru_cache()
+    def get_user(self, id: str) -> User:
+        """
+        Turns a Slack user ID into a user object.
+        Last 128 users retrieved are cached, meaning updated user details may not be visible immediately.
+
+        :param id: The user ID.
+        :return: The user object.
+        """
+        user_data = self.client.api_call(
+            "users.info",
+            user=id
+        )
+
+        return User(user_data["user"])
+
+    @lru_cache()
+    def get_channel(self, id: str) -> Channel:
+        """
+        Turns a Slack user ID into a channel object.
+        Last 128 channels retrieved are cached, meaning updated channel details may not be visible immediately.
+
+        :param id: The channel ID.
+        :return: The channel object.
+        """
+        channel_data = self.client.api_call(
+            "conversations.info",
+            channel=id
+        )
+
+        return Channel(channel_data["channel"])
 
     def start(self) -> None:
         """
