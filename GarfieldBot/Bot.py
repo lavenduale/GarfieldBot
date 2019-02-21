@@ -4,6 +4,7 @@ import threading
 from typing import Callable, Union, Optional
 from pprint import pformat
 from functools import lru_cache
+import shlex
 
 from slackclient import SlackClient
 from jigsaw import PluginLoader
@@ -31,6 +32,7 @@ class Bot(object):
         self.client = SlackClient(token)
 
         self._handlers = {}
+        self._commands = {}
 
         # Discover and load all plugins from the plugins directory
         self.logger.debug("Loading plugins...")
@@ -77,6 +79,21 @@ class Bot(object):
         channel = self.get_channel(event.channel)
         self.logger.info(f"{user.name if user is not None else 'GarfieldBot'} -> {channel.name}: {event.text}")
 
+        if event.text.startswith("!"):
+            self._dispatch_command(event)
+
+    def _dispatch_command(self, event: MessageEvent) -> None:
+        """
+        Processes an incoming message event into a command, and runs the command.
+
+        :param event: The incoming message event.
+        """
+        command_text = event.text[1:]
+        command_name = command_text.split(" ")[0]
+        if command_name in self._commands:
+            args = shlex.split(command_text)
+            self._commands[command_name](event, *(args[1:]))
+
     def register_handler(self, type: str, handler: Callable[[SlackEvent], None]) -> None:
         """
         Registers a handler for a certain event.
@@ -88,6 +105,15 @@ class Bot(object):
             self._handlers[type] = [handler]
         else:
             self._handlers[type].append(handler)
+
+    def register_command(self, name: str, handler: Callable[..., None]) -> None:
+        """
+        Registers a command and command handler.
+
+        :param name: The name of the command.
+        :param handler: The function to call when the command is ran.
+        """
+        self._commands[name] = handler
 
     @lru_cache()
     def get_user(self, id: str) -> Optional[User]:

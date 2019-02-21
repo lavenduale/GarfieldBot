@@ -8,8 +8,7 @@ class TestPlugin(GarfieldPlugin):
     def __init__(self, manifest, bot):
         super().__init__(manifest, bot)
 
-        self.bot.register_handler("message", self.handle_message)
-    
-    def handle_message(self, event: MessageEvent) -> None:
-        if event.text.lower() == "ping":
-            self.bot.send_message(event.channel, "Pong!")
+        self.bot.register_command("test", self.handle_command)
+
+    def handle_command(self, event: MessageEvent, *args) -> None:
+        self.bot.send_message(event.channel, ", ".join(args))
