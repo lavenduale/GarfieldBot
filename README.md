@@ -16,6 +16,8 @@ Since there are integration limits within each Slack workspace, it is recommende
 
 ## Setting up for local development
 
+*Note:* macOS users may have to install some root certificates if they encounter an SSL error. See [here](https://stackoverflow.com/a/42098127) for details.
+
 1. Ensure Python 3.6 or newer is installed
 2. Add your OAuth Access Token as described above
 3. Install dependencies
