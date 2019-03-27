@@ -168,6 +168,23 @@ class Bot(object):
             channel=channel,
             text=text
         )
+    
+    def send_to_thread(self, channel: str, thread_ts: str, text: str) -> None:
+        """ Sends a message to a given thread.
+
+        :param channel: Either the ID of the channel to send to, or a channel object.
+        :param thread_ts: The unique identifier for a particular thread.
+        :param text: The text to send
+        """
+        if isinstance(channel, Channel):
+            channel = channel.id
+
+        self.client.api_call(
+            "chat.postMessage",
+            channel=channel,
+            thread_ts=thread_ts,
+            text=text
+        )
 
     def start(self) -> None:
         """
