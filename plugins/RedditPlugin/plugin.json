@@ -1,0 +1,6 @@
+{
+    "name": "RedditPlugin",
+    "author": "Steve Parson & Ethan Du",
+    "version": "1.0.0",
+    "main_class": "RedditPlugin"
+}
