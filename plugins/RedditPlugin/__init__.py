@@ -1,5 +1,5 @@
 from GarfieldBot import GarfieldPlugin, MessageEvent
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 import praw
 import os
 
@@ -9,20 +9,14 @@ class RedditPlugin(GarfieldPlugin):
     def __init__(self, manifest, bot):
         super().__init__(manifest, bot)
         
-        # Get login details from env
-        load_dotenv()
-        self.reddit_client_id=os.environ["REDDIT_CLIENT_ID"]
-        self.reddit_client_secret=os.environ["REDDIT_CLIENT_SECRET"]
-        self.reddit_client_username=os.environ["REDDIT_USERNAME"]
-        self.reddit_client_password=os.environ["REDDIT_PASSWORD"]
-        
-        # Login
+        # Login with details from env
+        load_dotenv(find_dotenv())
         self.reddit = praw.Reddit(
-            client_id       =self.reddit_client_id,
-            client_secret   =self.reddit_client_secret,
-            username        =self.reddit_client_username,
-            password        =self.reddit_client_password,
-            user_agent      ='GarfieldBotRedditPlugin'
+            client_id       = os.environ["REDDIT_CLIENT_ID"],
+            client_secret   = os.environ["REDDIT_CLIENT_SECRET"],
+            username        = os.environ["REDDIT_USERNAME"],
+            password        = os.environ["REDDIT_PASSWORD"],
+            user_agent      = 'GarfieldBotRedditPlugin'
         )
 
         # Register commands
