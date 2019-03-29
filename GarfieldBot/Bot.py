@@ -169,12 +169,12 @@ class Bot(object):
             text=text
         )
     
-    def send_to_thread(self, channel: str, thread_ts: str, text: str) -> None:
+    def send_to_thread(self, channel: Union[Channel, str], thread_ts: str, text: str) -> None:
         """ Sends a message to a given thread.
 
         :param channel: Either the ID of the channel to send to, or a channel object.
         :param thread_ts: The unique identifier for a particular thread.
-        :param text: The text to send
+        :param text: The text to send.
         """
         if isinstance(channel, Channel):
             channel = channel.id
